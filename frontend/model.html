@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Model Weights — ValRank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0f; --surface: #12141a; --surface2: #1a1d26;
+    --border: rgba(255,255,255,0.07); --accent: #ff4655; --accent2: #7b61ff;
+    --text: #e8e9f0; --muted: #6b7080;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 2px; color: var(--accent); }
+  .logo span { color: var(--text); }
+  nav a {
+    color: var(--muted); font-size: 13px; text-decoration: none;
+    padding: 6px 14px; border-radius: 6px; transition: all 0.2s; font-weight: 500;
+  }
+  nav a:hover, nav a.active { color: var(--text); background: var(--surface2); }
+  nav a.active { color: var(--accent); }
+  main { padding: 2rem; max-width: 680px; margin: 0 auto; }
+  h1 { font-family: 'Rajdhani', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+  h1 span { color: var(--accent); }
+  .sub { font-size: 13px; color: var(--muted); margin-bottom: 1.5rem; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem;
+  }
+  .card-title {
+    font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 1.25rem;
+  }
+  .weight-row { display: flex; align-items: center; gap: 12px; margin-bottom: 1.1rem; }
+  .weight-row:last-child { margin-bottom: 0; }
+  .wlabel { font-size: 13px; font-weight: 500; width: 110px; flex-shrink: 0; }
+  .wlabel .abbr { font-size: 11px; color: var(--muted); display: block; }
+  input[type=range] {
+    flex: 1; -webkit-appearance: none; appearance: none;
+    height: 4px; background: var(--surface2); border-radius: 2px; outline: none; cursor: pointer;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%;
+    background: var(--accent2); cursor: pointer; transition: background 0.2s;
+  }
+  input[type=range]::-webkit-slider-thumb:hover { background: var(--accent); }
+  .wpct {
+    font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 700;
+    min-width: 44px; text-align: right; color: var(--accent2);
+  }
+  .total-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding-top: 1rem; border-top: 1px solid var(--border); margin-top: 1rem;
+    font-size: 13px; color: var(--muted);
+  }
+  .total-val {
+    font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700;
+  }
+  .total-val.ok { color: #81c784; }
+  .total-val.warn { color: var(--accent); }
+  .formula-box {
+    background: var(--surface2); border-radius: 8px; padding: 12px 16px;
+    font-family: 'Rajdhani', sans-serif; font-size: 14px; color: var(--muted);
+    letter-spacing: 0.3px; line-height: 1.8; margin-top: 1rem;
+  }
+  .formula-box span { color: var(--text); font-weight: 600; }
+  .btn-row { display: flex; gap: 10px; margin-top: 1.25rem; }
+  .btn {
+    flex: 1; padding: 11px; border-radius: 8px; font-family: 'Rajdhani', sans-serif;
+    font-size: 14px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+    cursor: pointer; transition: all 0.2s; border: 1px solid var(--border);
+  }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: white; }
+  .btn-primary:hover { background: #e03040; }
+  .btn-secondary { background: transparent; color: var(--muted); }
+  .btn-secondary:hover { background: var(--surface2); color: var(--text); }
+  .msg { font-size: 13px; text-align: center; margin-top: 0.75rem; min-height: 18px; }
+  .msg.success { color: #81c784; }
+  .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; text-decoration: none; margin-top: 1rem; transition: color 0.2s; }
+  .back-link:hover { color: var(--text); }
+  .info-box {
+    background: rgba(123,97,255,0.08); border: 1px solid rgba(123,97,255,0.2);
+    border-radius: 8px; padding: 12px 16px; font-size: 13px; color: var(--muted); line-height: 1.6;
+    margin-bottom: 1.5rem;
+  }
+  .info-box strong { color: var(--text); }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">VAL<span>RANK</span></div>
+  <nav>
+    <a href="index.html">Rankings</a>
+    <a href="add_player.html">Add Player</a>
+    <a href="model.html" class="active">Model Weights</a>
+  </nav>
+</header>
+
+<main>
+  <h1>Model <span>Weights</span></h1>
+  <p class="sub">Control how much each stat influences the overall ranking score.</p>
+
+  <div class="info-box">
+    <strong>How it works:</strong> Each stat is normalized to a 0–100 scale, then multiplied by its weight. The final score is a weighted average. Higher weight = more influence on the ranking.
+  </div>
+
+  <div class="card">
+    <div class="card-title">Stat Weights</div>
+
+    <div class="weight-row">
+      <div class="wlabel">ACS <span class="abbr">Avg Combat Score</span></div>
+      <input type="range" min="0" max="100" step="1" value="30" id="w-acs" oninput="update()">
+      <div class="wpct" id="l-acs">30%</div>
+    </div>
+    <div class="weight-row">
+      <div class="wlabel">K/D Ratio <span class="abbr">Kill / Death</span></div>
+      <input type="range" min="0" max="100" step="1" value="25" id="w-kd" oninput="update()">
+      <div class="wpct" id="l-kd">25%</div>
+    </div>
+    <div class="weight-row">
+      <div class="wlabel">KDA <span class="abbr">K+A / Deaths</span></div>
+      <input type="range" min="0" max="100" step="1" value="20" id="w-kda" oninput="update()">
+      <div class="wpct" id="l-kda">20%</div>
+    </div>
+    <div class="weight-row">
+      <div class="wlabel">Win Rate <span class="abbr">% Matches Won</span></div>
+      <input type="range" min="0" max="100" step="1" value="15" id="w-wr" oninput="update()">
+      <div class="wpct" id="l-wr">15%</div>
+    </div>
+    <div class="weight-row">
+      <div class="wlabel">Headshot % <span class="abbr">HS per Kill</span></div>
+      <input type="range" min="0" max="100" step="1" value="10" id="w-hs" oninput="update()">
+      <div class="wpct" id="l-hs">10%</div>
+    </div>
+
+    <div class="total-row">
+      <span>Total weight</span>
+      <span class="total-val" id="total">100%</span>
+    </div>
+
+    <div class="formula-box" id="formula">
+      Score = (<span id="f-acs">30%</span> × ACS) + (<span id="f-kd">25%</span> × K/D) + (<span id="f-kda">20%</span> × KDA) + (<span id="f-wr">15%</span> × Win Rate) + (<span id="f-hs">10%</span> × HS%)
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-secondary" onclick="resetWeights()">Reset to Default</button>
+      <button class="btn btn-primary" onclick="saveWeights()">Save & Apply</button>
+    </div>
+    <div class="msg" id="msg"></div>
+  </div>
+
+  <a class="back-link" href="index.html">← Back to Rankings</a>
+</main>
+
+<script>
+const keys = ['acs','kd','kda','wr','hs'];
+const labels = {acs:'ACS',kd:'K/D',kda:'KDA',wr:'Win Rate',hs:'HS%'};
+
+function update() {
+  let total = 0;
+  keys.forEach(k => {
+    const v = parseInt(document.getElementById('w-'+k).value);
+    document.getElementById('l-'+k).textContent = v + '%';
+    document.getElementById('f-'+k).textContent = v + '%';
+    total += v;
+  });
+  const el = document.getElementById('total');
+  el.textContent = total + '%';
+  el.className = 'total-val ' + (total === 100 ? 'ok' : 'warn');
+}
+
+function resetWeights() {
+  const defaults = {acs:30,kd:25,kda:20,wr:15,hs:10};
+  keys.forEach(k => { document.getElementById('w-'+k).value = defaults[k]; });
+  update();
+  document.getElementById('msg').textContent = '';
+}
+
+function saveWeights() {
+  const weights = {};
+  let total = 0;
+  keys.forEach(k => {
+    const v = parseInt(document.getElementById('w-'+k).value);
+    weights[k === 'wr' ? 'win_rate' : k === 'hs' ? 'headshot' : k] = v / 100;
+    total += v;
+  });
+  const msg = document.getElementById('msg');
+  if (total === 0) {
+    msg.textContent = 'At least one weight must be greater than 0.';
+    msg.className = 'msg error';
+    return;
+  }
+  localStorage.setItem('valrank_weights', JSON.stringify(weights));
+  msg.textContent = '✓ Weights saved! Rankings will update on the next load.';
+  msg.className = 'msg success';
+}
+
+function loadSaved() {
+  try {
+    const saved = localStorage.getItem('valrank_weights');
+    if (!saved) return;
+    const w = JSON.parse(saved);
+    const map = {acs:'acs',kd:'kd',kda:'kda',win_rate:'wr',headshot:'hs'};
+    Object.entries(w).forEach(([key,val]) => {
+      const id = map[key];
+      if (id) document.getElementById('w-'+id).value = Math.round(val*100);
+    });
+    update();
+  } catch(e) {}
+}
+
+loadSaved();
+update();
+</script>
+</body>
+</html>

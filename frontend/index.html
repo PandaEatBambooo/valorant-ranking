@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Valorant Player Ranking System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0f;
+    --surface: #12141a;
+    --surface2: #1a1d26;
+    --border: rgba(255,255,255,0.07);
+    --accent: #ff4655;
+    --accent2: #7b61ff;
+    --text: #e8e9f0;
+    --muted: #6b7080;
+    --radiant: #f5c842;
+    --immortal: #c678b0;
+    --diamond: #4fc3f7;
+    --platinum: #81c784;
+    --gold: #ffb74d;
+    --iron: #90a4ae;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 2px; color: var(--accent); }
+  .logo span { color: var(--text); }
+  nav a {
+    color: var(--muted); font-size: 13px; text-decoration: none;
+    padding: 6px 14px; border-radius: 6px; transition: all 0.2s;
+    font-weight: 500; letter-spacing: 0.5px;
+  }
+  nav a:hover, nav a.active { color: var(--text); background: var(--surface2); }
+  nav a.active { color: var(--accent); }
+
+  .hero {
+    background: linear-gradient(135deg, #0a0b0f 0%, #12141a 50%, #0f1018 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 2.5rem 2rem 2rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; right: -60px;
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(255,70,85,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .hero-title { font-family: 'Rajdhani', sans-serif; font-size: 32px; font-weight: 700; letter-spacing: 1px; margin-bottom: 6px; }
+  .hero-title span { color: var(--accent); }
+  .hero-sub { font-size: 13px; color: var(--muted); }
+  .stats-row { display: flex; gap: 1.5rem; margin-top: 1.5rem; flex-wrap: wrap; }
+  .stat-chip {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 16px;
+    font-family: 'Rajdhani', sans-serif;
+  }
+  .stat-chip .val { font-size: 22px; font-weight: 700; color: var(--accent); }
+  .stat-chip .lbl { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+
+  main { padding: 1.5rem 2rem; max-width: 1200px; margin: 0 auto; }
+
+  .table-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .table-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .table-header h2 { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
+  .capacity { font-size: 12px; color: var(--muted); }
+  .capacity span { color: var(--accent); font-weight: 600; }
+
+  table { width: 100%; border-collapse: collapse; }
+  thead th {
+    font-size: 11px; font-weight: 500; color: var(--muted);
+    letter-spacing: 1px; text-transform: uppercase;
+    padding: 10px 14px; text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.15s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.03); }
+  td { padding: 12px 14px; font-size: 13px; }
+
+  .rank-num { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; }
+  .rank-1 { color: #f5c842; }
+  .rank-2 { color: #c0c0c0; }
+  .rank-3 { color: #cd7f32; }
+  .rank-other { color: var(--muted); }
+
+  .player-name { font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: 0.5px; }
+  .agent-tag { font-size: 12px; color: var(--muted); }
+
+  .score-bar { display: flex; align-items: center; gap: 8px; }
+  .bar-bg { background: var(--surface2); border-radius: 3px; height: 5px; width: 70px; flex-shrink: 0; }
+  .bar-fill { height: 5px; border-radius: 3px; background: linear-gradient(90deg, var(--accent2), var(--accent)); transition: width 0.5s ease; }
+  .score-num { font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 600; min-width: 28px; }
+
+  .tier-badge {
+    display: inline-block; font-size: 11px; font-weight: 600;
+    padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px;
+    font-family: 'Rajdhani', sans-serif;
+  }
+  .tier-Radiant  { background: rgba(245,200,66,0.15);  color: var(--radiant);  border: 1px solid rgba(245,200,66,0.3); }
+  .tier-Immortal { background: rgba(198,120,176,0.15); color: var(--immortal); border: 1px solid rgba(198,120,176,0.3); }
+  .tier-Diamond  { background: rgba(79,195,247,0.15);  color: var(--diamond);  border: 1px solid rgba(79,195,247,0.3); }
+  .tier-Platinum { background: rgba(129,199,132,0.15); color: var(--platinum); border: 1px solid rgba(129,199,132,0.3); }
+  .tier-Gold     { background: rgba(255,183,77,0.15);  color: var(--gold);     border: 1px solid rgba(255,183,77,0.3); }
+  .tier-Iron     { background: rgba(144,164,174,0.15); color: var(--iron);     border: 1px solid rgba(144,164,174,0.3); }
+
+  .del-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 16px; padding: 4px 8px;
+    border-radius: 4px; transition: all 0.2s;
+  }
+  .del-btn:hover { color: var(--accent); background: rgba(255,70,85,0.1); }
+
+  .empty-state {
+    text-align: center; padding: 3rem;
+    color: var(--muted); font-size: 14px;
+  }
+  .empty-state .icon { font-size: 32px; margin-bottom: 0.75rem; opacity: 0.4; }
+
+  .toast {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 18px;
+    font-size: 13px; color: var(--text);
+    opacity: 0; transform: translateY(8px);
+    transition: all 0.3s; pointer-events: none; z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.error { border-color: rgba(255,70,85,0.4); color: var(--accent); }
+
+  @media (max-width: 700px) {
+    header { padding: 0 1rem; }
+    main { padding: 1rem; }
+    .hero { padding: 1.5rem 1rem 1.25rem; }
+    th:nth-child(4), td:nth-child(4),
+    th:nth-child(6), td:nth-child(6) { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">VAL<span>RANK</span></div>
+  <nav>
+    <a href="index.html" class="active">Rankings</a>
+    <a href="add_player.html">Add Player</a>
+    <a href="model.html">Model Weights</a>
+  </nav>
+</header>
+
+<div class="hero">
+  <div class="hero-title"><span>VALORANT</span> Player Ranking System</div>
+  <div class="hero-sub">ML-powered rankings based on ACS, K/D, KDA, Win Rate &amp; Headshot %</div>
+  <div class="stats-row" id="summary-stats">
+    <div class="stat-chip"><div class="val" id="s-players">—</div><div class="lbl">Players</div></div>
+    <div class="stat-chip"><div class="val" id="s-top">—</div><div class="lbl">Top Score</div></div>
+    <div class="stat-chip"><div class="val" id="s-avg">—</div><div class="lbl">Avg Score</div></div>
+    <div class="stat-chip"><div class="val" id="s-leader">—</div><div class="lbl">Leader</div></div>
+  </div>
+</div>
+
+<main>
+  <div class="table-wrap">
+    <div class="table-header">
+      <h2>Leaderboard</h2>
+      <div class="capacity">Slots: <span id="cap-used">0</span> / 15</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Player</th>
+          <th>ACS</th>
+          <th>K/D</th>
+          <th>KDA</th>
+          <th>Win%</th>
+          <th>HS%</th>
+          <th>Score</th>
+          <th>Tier</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rank-body">
+        <tr><td colspan="10"><div class="empty-state"><div class="icon">◈</div>No players yet. <a href="add_player.html" style="color:var(--accent)">Add the first one</a>.</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+
+function showToast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 2800);
+}
+
+function rankClass(i) {
+  if (i === 0) return 'rank-1';
+  if (i === 1) return 'rank-2';
+  if (i === 2) return 'rank-3';
+  return 'rank-other';
+}
+
+async function loadPlayers() {
+  try {
+    const res = await fetch(`${API}/players`);
+    const players = await res.json();
+    const body = document.getElementById('rank-body');
+
+    document.getElementById('cap-used').textContent = players.length;
+
+    if (players.length === 0) {
+      body.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="icon">◈</div>No players yet. <a href="add_player.html" style="color:var(--accent)">Add the first one</a>.</div></td></tr>`;
+      return;
+    }
+
+    const scores = players.map(p => p.score);
+    const avg = (scores.reduce((a,b)=>a+b,0)/scores.length).toFixed(1);
+    document.getElementById('s-players').textContent = players.length;
+    document.getElementById('s-top').textContent = scores[0];
+    document.getElementById('s-avg').textContent = avg;
+    document.getElementById('s-leader').textContent = players[0].name;
+
+    body.innerHTML = players.map((p, i) => `
+      <tr>
+        <td><span class="rank-num ${rankClass(i)}">${i+1}</span></td>
+        <td>
+          <div class="player-name">${p.name}</div>
+          <div class="agent-tag">${p.agent}</div>
+        </td>
+        <td>${p.acs}</td>
+        <td>${p.kd.toFixed(2)}</td>
+        <td>${p.kda.toFixed(1)}</td>
+        <td>${p.win_rate}%</td>
+        <td>${p.headshot}%</td>
+        <td>
+          <div class="score-bar">
+            <div class="bar-bg"><div class="bar-fill" style="width:${p.score}%"></div></div>
+            <span class="score-num">${p.score}</span>
+          </div>
+        </td>
+        <td><span class="tier-badge tier-${p.tier}">${p.tier}</span></td>
+        <td><button class="del-btn" onclick="deletePlayer(${p.id},'${p.name}')" title="Remove">✕</button></td>
+      </tr>
+    `).join('');
+  } catch(e) {
+    showToast('Failed to load players.', true);
+  }
+}
+
+async function deletePlayer(id, name) {
+  if (!confirm(`Remove ${name} from the rankings?`)) return;
+  try {
+    await fetch(`${API}/players/${id}`, { method: 'DELETE' });
+    showToast(`${name} removed.`);
+    loadPlayers();
+  } catch(e) {
+    showToast('Failed to delete player.', true);
+  }
+}
+
+loadPlayers();
+</script>
+</body>
+</html>

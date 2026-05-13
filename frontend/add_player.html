@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Player — ValRank</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0f; --surface: #12141a; --surface2: #1a1d26;
+    --border: rgba(255,255,255,0.07); --accent: #ff4655; --accent2: #7b61ff;
+    --text: #e8e9f0; --muted: #6b7080;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 60px;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 2px; color: var(--accent); }
+  .logo span { color: var(--text); }
+  nav a {
+    color: var(--muted); font-size: 13px; text-decoration: none;
+    padding: 6px 14px; border-radius: 6px; transition: all 0.2s; font-weight: 500;
+  }
+  nav a:hover, nav a.active { color: var(--text); background: var(--surface2); }
+  nav a.active { color: var(--accent); }
+  main { padding: 2rem; max-width: 640px; margin: 0 auto; }
+  h1 { font-family: 'Rajdhani', sans-serif; font-size: 24px; font-weight: 700; letter-spacing: 1px; margin-bottom: 4px; }
+  h1 span { color: var(--accent); }
+  .sub { font-size: 13px; color: var(--muted); margin-bottom: 1.5rem; }
+  .capacity-bar {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 12px;
+  }
+  .cap-label { font-size: 12px; color: var(--muted); flex: 1; }
+  .cap-count { font-family: 'Rajdhani', sans-serif; font-size: 18px; font-weight: 700; }
+  .cap-count.full { color: var(--accent); }
+  .cap-track { flex: 1; background: var(--surface2); border-radius: 3px; height: 4px; }
+  .cap-fill { height: 4px; border-radius: 3px; background: var(--accent); transition: width 0.4s; }
+  .form-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem;
+  }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 12px; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; font-weight: 500; }
+  input {
+    background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-size: 14px; padding: 10px 12px; width: 100%;
+    font-family: 'Inter', sans-serif; transition: border-color 0.2s;
+  }
+  input:focus { outline: none; border-color: var(--accent2); }
+  input::placeholder { color: var(--muted); }
+  .hint { font-size: 11px; color: var(--muted); }
+  .divider { height: 1px; background: var(--border); margin: 1.25rem 0; grid-column: 1 / -1; }
+  .section-label {
+    font-family: 'Rajdhani', sans-serif; font-size: 13px; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+    grid-column: 1 / -1; margin-top: 0.25rem;
+  }
+  .submit-btn {
+    display: block; width: 100%; margin-top: 1.25rem;
+    background: var(--accent); border: none; border-radius: 8px;
+    color: white; font-family: 'Rajdhani', sans-serif;
+    font-size: 16px; font-weight: 700; letter-spacing: 1px;
+    padding: 13px; cursor: pointer; transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  .submit-btn:hover { background: #e03040; transform: translateY(-1px); }
+  .submit-btn:active { transform: translateY(0); }
+  .submit-btn:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; transform: none; }
+  .msg { margin-top: 1rem; font-size: 13px; text-align: center; min-height: 20px; }
+  .msg.success { color: #81c784; }
+  .msg.error { color: var(--accent); }
+  .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; text-decoration: none; margin-top: 1rem; transition: color 0.2s; }
+  .back-link:hover { color: var(--text); }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">VAL<span>RANK</span></div>
+  <nav>
+    <a href="index.html">Rankings</a>
+    <a href="add_player.html" class="active">Add Player</a>
+    <a href="model.html">Model Weights</a>
+  </nav>
+</header>
+
+<main>
+  <h1>Add <span>Player</span></h1>
+  <p class="sub">Enter match statistics to add a player to the ranking system.</p>
+
+  <div class="capacity-bar">
+    <div class="cap-label">Player slots used</div>
+    <div class="cap-track"><div class="cap-fill" id="cap-fill" style="width:0%"></div></div>
+    <div class="cap-count" id="cap-count">0 / 15</div>
+  </div>
+
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="section-label">Player Info</div>
+      <div class="form-group">
+        <label>Player Name</label>
+        <input type="text" id="in-name" placeholder="e.g. TenZ" maxlength="50">
+      </div>
+      <div class="form-group">
+        <label>Agent</label>
+        <select id="in-agent" style="background:#1a1d26;border:1px solid rgba(255,255,255,0.07);border-radius:8px;color:#e8e9f0;font-size:14px;padding:10px 12px;width:100%;font-family:'Inter',sans-serif;cursor:pointer;">
+          <option value="" disabled selected>Select an agent</option>
+          <optgroup label="Duelists">
+            <option>Jett</option><option>Reyna</option><option>Raze</option>
+            <option>Phoenix</option><option>Yoru</option><option>Neon</option><option>Iso</option>
+          </optgroup>
+          <optgroup label="Initiators">
+            <option>Sova</option><option>Breach</option><option>Skye</option>
+            <option>KAY/O</option><option>Fade</option><option>Gekko</option>
+          </optgroup>
+          <optgroup label="Controllers">
+            <option>Brimstone</option><option>Viper</option><option>Omen</option>
+            <option>Astra</option><option>Harbor</option><option>Clove</option>
+          </optgroup>
+          <optgroup label="Sentinels">
+            <option>Killjoy</option><option>Cypher</option><option>Sage</option>
+            <option>Chamber</option><option>Deadlock</option><option>Vyse</option>
+          </optgroup>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Matches Played</label>
+        <input type="number" id="in-matches" placeholder="e.g. 150" min="1">
+      </div>
+      <div class="divider"></div>
+      <div class="section-label">Match Statistics</div>
+      <div class="form-group">
+        <label>ACS (Avg Combat Score)</label>
+        <input type="number" id="in-acs" placeholder="150 – 380" min="0" max="999" step="1">
+        <span class="hint">Average per-round combat score</span>
+      </div>
+      <div class="form-group">
+        <label>K/D Ratio</label>
+        <input type="number" id="in-kd" placeholder="0.5 – 2.5" min="0" max="10" step="0.01">
+        <span class="hint">Kills divided by Deaths</span>
+      </div>
+      <div class="form-group">
+        <label>KDA</label>
+        <input type="number" id="in-kda" placeholder="1.0 – 6.0" min="0" max="20" step="0.01">
+        <span class="hint">Kills + Assists divided by Deaths</span>
+      </div>
+      <div class="form-group">
+        <label>Win Rate (%)</label>
+        <input type="number" id="in-wr" placeholder="30 – 80" min="0" max="100" step="1">
+        <span class="hint">Percentage of matches won</span>
+      </div>
+      <div class="form-group full">
+        <label>Headshot % </label>
+        <input type="number" id="in-hs" placeholder="5 – 55" min="0" max="100" step="1">
+        <span class="hint">Percentage of kills that are headshots</span>
+      </div>
+    </div>
+    <button class="submit-btn" id="submit-btn" onclick="addPlayer()">Add to Rankings</button>
+    <div class="msg" id="msg"></div>
+  </div>
+  <a class="back-link" href="index.html">← Back to Rankings</a>
+</main>
+
+<script>
+const API = '/api';
+
+async function loadCapacity() {
+  try {
+    const res = await fetch(`${API}/players/count`);
+    const data = await res.json();
+    const pct = (data.count / data.max * 100).toFixed(0);
+    document.getElementById('cap-fill').style.width = pct + '%';
+    document.getElementById('cap-count').textContent = `${data.count} / ${data.max}`;
+    if (data.count >= data.max) {
+      document.getElementById('cap-count').classList.add('full');
+      document.getElementById('submit-btn').disabled = true;
+      document.getElementById('msg').textContent = 'Player limit reached. Delete a player to add more.';
+      document.getElementById('msg').className = 'msg error';
+    }
+  } catch(e) {}
+}
+
+async function addPlayer() {
+  const name = document.getElementById('in-name').value.trim();
+  const agent = document.getElementById('in-agent').value.trim();
+  const acs = document.getElementById('in-acs').value;
+  const kd = document.getElementById('in-kd').value;
+  const kda = document.getElementById('in-kda').value;
+  const wr = document.getElementById('in-wr').value;
+  const hs = document.getElementById('in-hs').value;
+  const matches = document.getElementById('in-matches').value;
+
+  const msg = document.getElementById('msg');
+
+  if (!name || !acs || !kd || !kda || !wr || !hs) {
+    msg.textContent = 'Please fill in all required stat fields.';
+    msg.className = 'msg error';
+    return;
+  }
+
+  try {
+    const res = await fetch(`${API}/players`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, agent, acs, kd, kda, win_rate: wr, headshot: hs, matches })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      msg.textContent = data.error || 'Failed to add player.';
+      msg.className = 'msg error';
+      return;
+    }
+    msg.textContent = `✓ ${name} added successfully!`;
+    msg.className = 'msg success';
+    ['in-name','in-agent','in-acs','in-kd','in-kda','in-wr','in-hs','in-matches'].forEach(id => document.getElementById(id).value = '');
+    loadCapacity();
+  } catch(e) {
+    msg.textContent = 'Server error. Is the backend running?';
+    msg.className = 'msg error';
+  }
+}
+
+loadCapacity();
+</script>
+</body>
+</html>
