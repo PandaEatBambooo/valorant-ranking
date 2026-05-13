@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register — ValRank</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#0a0b0f;--surface:#12141a;--surface2:#1a1d26;--border:rgba(255,255,255,0.07);--accent:#ff4655;--text:#e8e9f0;--muted:#6b7080; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1rem}
+  .logo{font-family:'Rajdhani',sans-serif;font-size:28px;font-weight:700;letter-spacing:3px;color:var(--accent);margin-bottom:6px;text-align:center}
+  .logo em{color:var(--text);font-style:normal}
+  .tagline{font-size:13px;color:var(--muted);text-align:center;margin-bottom:2rem}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:2rem;width:100%;max-width:380px}
+  .card h2{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;margin-bottom:1.5rem}
+  .fg{display:flex;flex-direction:column;gap:6px;margin-bottom:1rem}
+  label{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;font-weight:500}
+  input{background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;padding:10px 12px;width:100%;font-family:'Inter',sans-serif;transition:border-color .2s}
+  input:focus{outline:none;border-color:#7b61ff}
+  input::placeholder{color:#3a3f52}
+  .btn{display:block;width:100%;margin-top:1.25rem;background:#7b61ff;border:none;border-radius:8px;color:white;font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;padding:12px;cursor:pointer;text-transform:uppercase;transition:all .2s}
+  .btn:hover{background:#6a52e0}
+  .msg{font-size:13px;text-align:center;margin-top:.75rem;min-height:18px}
+  .msg.error{color:var(--accent)}
+  .msg.success{color:#81c784}
+  .switch{text-align:center;margin-top:1.25rem;font-size:13px;color:var(--muted)}
+  .switch a{color:var(--accent);text-decoration:none;font-weight:500}
+  .switch a:hover{color:var(--text)}
+  .divider{height:1px;background:var(--border);margin:1.25rem 0}
+  .hint{font-size:11px;color:#3a3f52}
+</style>
+</head>
+<body>
+<div class="logo">VAL<em>RANK</em></div>
+<div class="tagline">Create your account to get started</div>
+
+<div class="card">
+  <h2>Create Account</h2>
+  <div class="fg">
+    <label>Username</label>
+    <input type="text" id="username" placeholder="Choose a username" maxlength="50">
+  </div>
+  <div class="fg">
+    <label>Email</label>
+    <input type="email" id="email" placeholder="your@email.com">
+  </div>
+  <div class="fg">
+    <label>Password</label>
+    <input type="password" id="password" placeholder="At least 6 characters">
+    <span class="hint">Minimum 6 characters</span>
+  </div>
+  <div class="fg">
+    <label>Confirm Password</label>
+    <input type="password" id="confirm" placeholder="Repeat your password">
+  </div>
+  <button class="btn" onclick="register()">Create Account</button>
+  <div class="msg" id="msg"></div>
+  <div class="divider"></div>
+  <div class="switch">Already have an account? <a href="/">Login here</a></div>
+</div>
+
+<script>
+async function register() {
+  const username = document.getElementById('username').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const confirm = document.getElementById('confirm').value;
+  const msg = document.getElementById('msg');
+
+  if (!username || !email || !password || !confirm) {
+    msg.textContent = 'Please fill in all fields.';
+    msg.className = 'msg error'; return;
+  }
+  if (password.length < 6) {
+    msg.textContent = 'Password must be at least 6 characters.';
+    msg.className = 'msg error'; return;
+  }
+  if (password !== confirm) {
+    msg.textContent = 'Passwords do not match.';
+    msg.className = 'msg error'; return;
+  }
+
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ username, email, password })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      msg.textContent = data.error;
+      msg.className = 'msg error'; return;
+    }
+    msg.textContent = `Account created! Welcome, ${data.username}!`;
+    msg.className = 'msg success';
+    setTimeout(() => window.location.href = '/rankings', 900);
+  } catch(e) {
+    msg.textContent = 'Server error. Try again.';
+    msg.className = 'msg error';
+  }
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') register(); });
+</script>
+</body>
+</html>
