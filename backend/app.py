@@ -1,8 +1,11 @@
+import sys
+import os
+sys.path.insert(0, os.path.dirname(__file__))
+
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from database import db, Player
 from model import calculate_score, get_tier
-import os
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 CORS(app)
