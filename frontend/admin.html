@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard — ValRank</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0b0f;--surface:#12141a;--surface2:#1a1d26;--border:rgba(255,255,255,0.07);--accent:#ff4655;--accent2:#7b61ff;--text:#e8e9f0;--muted:#6b7080}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+  header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+  .logo{font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;letter-spacing:2px;color:var(--accent)}
+  .logo em{color:var(--text);font-style:normal}
+  .logo .admin-badge{background:rgba(255,70,85,.15);color:var(--accent);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid rgba(255,70,85,.3);letter-spacing:1px;margin-left:8px;vertical-align:middle}
+  .nav-right{display:flex;align-items:center;gap:10px;font-size:13px}
+  .nav-right span{color:var(--muted)}
+  .nav-right a{color:var(--accent);text-decoration:none;padding:5px 12px;border-radius:6px;transition:background .2s}
+  .nav-right a:hover{background:rgba(255,70,85,.1)}
+
+  main{padding:2rem;max-width:1100px;margin:0 auto}
+  .page-title{font-family:'Rajdhani',sans-serif;font-size:26px;font-weight:700;letter-spacing:1px;margin-bottom:4px}
+  .page-title span{color:var(--accent)}
+  .page-sub{font-size:13px;color:var(--muted);margin-bottom:1.5rem}
+
+  .stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem}
+  .stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem}
+  .stat-card .val{font-family:'Rajdhani',sans-serif;font-size:32px;font-weight:700;color:var(--accent)}
+  .stat-card .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+
+  .section{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:1.5rem}
+  .section-head{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .section-head h2{font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:600;letter-spacing:1px;text-transform:uppercase}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{padding:9px 14px;text-align:left;font-size:10px;font-weight:500;color:var(--muted);letter-spacing:.8px;text-transform:uppercase;border-bottom:1px solid var(--border);background:rgba(255,255,255,.02)}
+  td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  tr:hover td{background:rgba(255,255,255,.02)}
+
+  .del-btn{background:none;border:1px solid rgba(255,70,85,.3);cursor:pointer;color:var(--accent);font-size:12px;padding:4px 10px;border-radius:6px;transition:all .2s;font-family:'Inter',sans-serif}
+  .del-btn:hover{background:rgba(255,70,85,.1)}
+  .view-btn{background:none;border:1px solid rgba(123,97,255,.3);cursor:pointer;color:#7b61ff;font-size:12px;padding:4px 10px;border-radius:6px;transition:all .2s;font-family:'Inter',sans-serif;margin-right:6px}
+  .view-btn:hover{background:rgba(123,97,255,.1)}
+
+  .tier{display:inline-block;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.4px}
+  .t-Radiant{background:rgba(245,200,66,.12);color:#f5c842;border:1px solid rgba(245,200,66,.25)}
+  .t-Immortal{background:rgba(198,120,176,.12);color:#c678b0;border:1px solid rgba(198,120,176,.25)}
+  .t-Diamond{background:rgba(79,195,247,.12);color:#4fc3f7;border:1px solid rgba(79,195,247,.25)}
+  .t-Platinum{background:rgba(129,199,132,.12);color:#81c784;border:1px solid rgba(129,199,132,.25)}
+  .t-Gold{background:rgba(255,183,77,.12);color:#ffb74d;border:1px solid rgba(255,183,77,.25)}
+  .t-Iron{background:rgba(144,164,174,.12);color:#90a4ae;border:1px solid rgba(144,164,174,.25)}
+
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:200;align-items:center;justify-content:center;padding:1rem}
+  .modal-overlay.open{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;width:100%;max-width:700px;max-height:80vh;overflow:hidden;display:flex;flex-direction:column}
+  .modal-head{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .modal-head h3{font-family:'Rajdhani',sans-serif;font-size:16px;font-weight:600;letter-spacing:1px}
+  .modal-close{background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;padding:2px 8px;border-radius:4px}
+  .modal-close:hover{color:var(--text);background:var(--surface2)}
+  .modal-body{overflow-y:auto;padding:0}
+
+  .empty{text-align:center;padding:2.5rem;color:var(--muted);font-size:13px}
+  .bar-wrap{display:flex;align-items:center;gap:7px}
+  .bar-bg{background:var(--surface2);border-radius:3px;height:4px;width:60px;flex-shrink:0}
+  .bar-f{height:4px;border-radius:3px;background:linear-gradient(90deg,var(--accent2),var(--accent))}
+  .sc{font-size:13px;font-weight:700;min-width:24px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">VAL<em>RANK</em> <span class="admin-badge">ADMIN</span></div>
+  <div class="nav-right">
+    <span id="nav-user"></span>
+    <a href="#" onclick="logout()">Logout</a>
+  </div>
+</header>
+
+<main>
+  <div class="page-title"><span>Admin</span> Dashboard</div>
+  <div class="page-sub">Manage all users and their player rankings.</div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><div class="val" id="s-users">—</div><div class="lbl">Total Users</div></div>
+    <div class="stat-card"><div class="val" id="s-players">—</div><div class="lbl">Total Players</div></div>
+    <div class="stat-card"><div class="val" id="s-avg">—</div><div class="lbl">Avg Players / User</div></div>
+  </div>
+
+  <div class="section">
+    <div class="section-head">
+      <h2>All Users</h2>
+      <span style="font-size:12px;color:var(--muted)" id="user-count"></span>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Username</th>
+          <th>Email</th>
+          <th>Players</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="users-body">
+        <tr><td colspan="5"><div class="empty">Loading users...</div></td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<!-- Player Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modal-title">Players</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <table>
+        <thead>
+          <tr><th>#</th><th>Player</th><th>Agent</th><th>ACS</th><th>K/D</th><th>Score</th><th>Tier</th><th></th></tr>
+        </thead>
+        <tbody id="modal-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+async function checkAuth() {
+  const r = await fetch('/api/me', { credentials: 'include' });
+  if (!r.ok) { window.location.href = '/'; return; }
+  const d = await r.json();
+  if (!d.is_admin) { window.location.href = '/rankings'; return; }
+  document.getElementById('nav-user').textContent = d.username;
+  loadStats();
+  loadUsers();
+}
+
+async function loadStats() {
+  const r = await fetch('/api/admin/stats', { credentials: 'include' });
+  const d = await r.json();
+  document.getElementById('s-users').textContent = d.total_users;
+  document.getElementById('s-players').textContent = d.total_players;
+  const avg = d.total_users > 0 ? (d.total_players / d.total_users).toFixed(1) : 0;
+  document.getElementById('s-avg').textContent = avg;
+}
+
+async function loadUsers() {
+  const r = await fetch('/api/admin/users', { credentials: 'include' });
+  const users = await r.json();
+  const body = document.getElementById('users-body');
+  document.getElementById('user-count').textContent = `${users.length} registered`;
+
+  if (users.length === 0) {
+    body.innerHTML = `<tr><td colspan="5"><div class="empty">No users registered yet.</div></td></tr>`;
+    return;
+  }
+
+  body.innerHTML = users.map((u, i) => `
+    <tr>
+      <td style="color:var(--muted)">${i + 1}</td>
+      <td style="font-weight:500">${u.username}</td>
+      <td style="color:var(--muted)">${u.email}</td>
+      <td><span style="font-family:'Rajdhani',sans-serif;font-size:15px;font-weight:700;color:var(--accent2)">${u.player_count}</span></td>
+      <td>
+        <button class="view-btn" onclick="viewPlayers(${u.id}, '${u.username}')">View Players</button>
+        <button class="del-btn" onclick="deleteUser(${u.id}, '${u.username}')">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+async function viewPlayers(userId, username) {
+  document.getElementById('modal-title').textContent = `${username}'s Players`;
+  document.getElementById('modal-body').innerHTML = '<tr><td colspan="8"><div class="empty">Loading...</div></td></tr>';
+  document.getElementById('modal').classList.add('open');
+
+  const r = await fetch(`/api/admin/users/${userId}/players`, { credentials: 'include' });
+  const players = await r.json();
+  const body = document.getElementById('modal-body');
+
+  if (players.length === 0) {
+    body.innerHTML = '<tr><td colspan="8"><div class="empty">No players added yet.</div></td></tr>';
+    return;
+  }
+
+  body.innerHTML = players.map((p, i) => `
+    <tr>
+      <td style="color:var(--muted)">${i + 1}</td>
+      <td style="font-weight:500">${p.name}</td>
+      <td style="color:var(--muted)">${p.agent}</td>
+      <td>${p.acs}</td>
+      <td>${p.kd.toFixed(2)}</td>
+      <td>
+        <div class="bar-wrap">
+          <div class="bar-bg"><div class="bar-f" style="width:${p.score}%"></div></div>
+          <span class="sc">${p.score}</span>
+        </div>
+      </td>
+      <td><span class="tier t-${p.tier}">${p.tier}</span></td>
+      <td><button class="del-btn" onclick="deletePlayer(${p.id}, '${p.name}', ${userId}, '${username}')">Delete</button></td>
+    </tr>
+  `).join('');
+}
+
+async function deletePlayer(playerId, name, userId, username) {
+  if (!confirm(`Delete player "${name}"?`)) return;
+  await fetch(`/api/admin/players/${playerId}`, { method: 'DELETE', credentials: 'include' });
+  viewPlayers(userId, username);
+  loadStats();
+  loadUsers();
+}
+
+async function deleteUser(userId, username) {
+  if (!confirm(`Delete user "${username}" and ALL their players? This cannot be undone.`)) return;
+  await fetch(`/api/admin/users/${userId}`, { method: 'DELETE', credentials: 'include' });
+  closeModal();
+  loadStats();
+  loadUsers();
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+}
+
+document.getElementById('modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+async function logout() {
+  await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/';
+}
+
+checkAuth();
+</script>
+</body>
+</html>

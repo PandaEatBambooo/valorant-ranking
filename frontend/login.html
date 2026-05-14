@@ -77,7 +77,7 @@ async function login() {
     }
     msg.textContent = `Welcome back, ${data.username}!`;
     msg.className = 'msg success';
-    setTimeout(() => window.location.href = '/rankings', 800);
+    setTimeout(() => window.location.href = data.is_admin ? '/admin' : '/rankings', 800);
   } catch(e) {
     msg.textContent = 'Server error. Try again.';
     msg.className = 'msg error';

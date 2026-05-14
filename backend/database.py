@@ -10,6 +10,7 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(256), nullable=False)
+    is_admin = db.Column(db.Boolean, default=False)
     players = db.relationship('Player', backref='owner', lazy=True, cascade='all, delete-orphan')
 
     def set_password(self, password):
