@@ -136,10 +136,11 @@ def admin_delete_user(user_id):
 def admin_user_players(user_id):
     if not require_admin():
         return jsonify({'error': 'Admin access required'}), 403
+    mode = request.args.get('mode', 'custom')
     players = Player.query.filter_by(user_id=user_id).all()
     result = []
     for p in players:
-        score = calculate_score(p.acs, p.kd, p.kda, p.win_rate, p.headshot)
+        score = calculate_score(p.acs, p.kd, p.kda, p.win_rate, p.headshot, mode=mode)
         result.append({
             'id': p.id, 'name': p.name, 'agent': p.agent,
             'acs': p.acs, 'kd': p.kd, 'kda': p.kda,
@@ -170,10 +171,15 @@ def get_players():
     user = get_current_user()
     if not user:
         return jsonify({'error': 'Not logged in'}), 401
+    mode = request.args.get('mode', 'custom')
     players = Player.query.filter_by(user_id=user.id).all()
     result = []
     for p in players:
-        score = calculate_score(p.acs, p.kd, p.kda, p.win_rate, p.headshot)
+        try:
+            score = calculate_score(p.acs, p.kd, p.kda, p.win_rate, p.headshot, mode=mode)
+        except FileNotFoundError:
+            # AI model not trained/deployed yet — fall back to the default formula
+            score = calculate_score(p.acs, p.kd, p.kda, p.win_rate, p.headshot, mode='custom')
         result.append({
             'id': p.id, 'name': p.name, 'agent': p.agent,
             'acs': p.acs, 'kd': p.kd, 'kda': p.kda,

@@ -89,10 +89,28 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
   .table-header h2 { font-family: 'Rajdhani', sans-serif; font-size: 16px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; }
   .capacity { font-size: 12px; color: var(--muted); }
   .capacity span { color: var(--accent); font-weight: 600; }
+
+  .header-right { display: flex; align-items: center; gap: 1.25rem; }
+
+  .mode-toggle {
+    display: flex; background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 3px; gap: 3px;
+  }
+  .mode-btn {
+    font-family: 'Rajdhani', sans-serif; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    background: none; border: none; color: var(--muted);
+    padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+  }
+  .mode-btn:hover { color: var(--text); }
+  .mode-btn.active { background: var(--accent); color: #fff; }
+  .mode-note { font-size: 11px; color: var(--muted); }
 
   table { width: 100%; border-collapse: collapse; }
   thead th {
@@ -194,7 +212,14 @@
   <div class="table-wrap">
     <div class="table-header">
       <h2>Leaderboard</h2>
-      <div class="capacity">Slots: <span id="cap-used">0</span> / 15</div>
+      <div class="header-right">
+        <div class="mode-note" id="mode-note">Scoring: Custom Formula</div>
+        <div class="mode-toggle">
+          <button class="mode-btn active" id="btn-custom" onclick="setMode('custom')">Custom Formula</button>
+          <button class="mode-btn" id="btn-ai" onclick="setMode('ai')">AI Model</button>
+        </div>
+        <div class="capacity">Slots: <span id="cap-used">0</span> / 15</div>
+      </div>
     </div>
     <table>
       <thead>
@@ -222,6 +247,8 @@
 
 <script>
 const API = '/api';
+let currentMode = 'custom';   // 'custom' or 'ai'
+let authReady = false;        // guards loadPlayers() from firing before auth check settles
 
 function showToast(msg, isError=false) {
   const t = document.getElementById('toast');
@@ -237,9 +264,23 @@ function rankClass(i) {
   return 'rank-other';
 }
 
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('btn-custom').classList.toggle('active', mode === 'custom');
+  document.getElementById('btn-ai').classList.toggle('active', mode === 'ai');
+  document.getElementById('mode-note').textContent =
+    mode === 'ai' ? 'Scoring: AI Model (trained)' : 'Scoring: Custom Formula';
+  loadPlayers();
+}
+
 async function loadPlayers() {
+  if (!authReady) return;  // wait for checkAuth() to confirm session first
   try {
-    const res = await fetch(`${API}/players`);
+    const res = await fetch(`${API}/players?mode=${currentMode}`, { credentials: 'include' });
+    if (!res.ok) {
+      showToast('Failed to load players.', true);
+      return;
+    }
     const players = await res.json();
     const body = document.getElementById('rank-body');
 
@@ -247,6 +288,10 @@ async function loadPlayers() {
 
     if (players.length === 0) {
       body.innerHTML = `<tr><td colspan="10"><div class="empty-state"><div class="icon">◈</div>No players yet. <a href="add_player.html" style="color:var(--accent)">Add the first one</a>.</div></td></tr>`;
+      document.getElementById('s-players').textContent = '0';
+      document.getElementById('s-top').textContent = '—';
+      document.getElementById('s-avg').textContent = '—';
+      document.getElementById('s-leader').textContent = '—';
       return;
     }
 
@@ -287,7 +332,7 @@ async function loadPlayers() {
 async function deletePlayer(id, name) {
   if (!confirm(`Remove ${name} from the rankings?`)) return;
   try {
-    await fetch(`${API}/players/${id}`, { method: 'DELETE' });
+    await fetch(`${API}/players/${id}`, { method: 'DELETE', credentials: 'include' });
     showToast(`${name} removed.`);
     loadPlayers();
   } catch(e) {
@@ -295,18 +340,23 @@ async function deletePlayer(id, name) {
   }
 }
 
-loadPlayers();
-
 async function checkAuth() {
-  const r = await fetch('/api/me', { credentials: 'include' });
-  if (!r.ok) { window.location.href = '/'; return; }
-  const d = await r.json();
-  document.getElementById('nav-user').textContent = d.username;
+  try {
+    const r = await fetch('/api/me', { credentials: 'include' });
+    if (!r.ok) { window.location.href = '/'; return; }
+    const d = await r.json();
+    document.getElementById('nav-user').textContent = d.username;
+    authReady = true;
+    loadPlayers();
+  } catch(e) {
+    window.location.href = '/';
+  }
 }
 async function logout() {
   await fetch('/api/logout', { method: 'POST', credentials: 'include' });
   window.location.href = '/';
 }
+
 checkAuth();
 </script>
 </body>
