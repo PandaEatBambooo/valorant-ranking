@@ -2,10 +2,12 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(__file__))
 
-from flask import Flask, request, jsonify, send_from_directory, session
+from flask import Flask, request, jsonify, send_from_directory, send_file, session
 from flask_cors import CORS
 from database import db, Player, User
 from model import calculate_score, get_tier
+import pandas as pd
+from io import BytesIO
 
 app = Flask(__name__, static_folder='../frontend', static_url_path='')
 app.secret_key = os.environ.get('SECRET_KEY', 'valrank-secret-key-2024')
@@ -44,6 +46,10 @@ def add():
 @app.route('/model')
 def model():
     return send_from_directory('../frontend', 'model.html')
+
+@app.route('/upload')
+def upload_page():
+    return send_from_directory('../frontend', 'upload.html')
 
 @app.route('/register')
 def register_page():
@@ -210,6 +216,131 @@ def add_player():
     db.session.add(player)
     db.session.commit()
     return jsonify({'message': f"{player.name} added successfully!"}), 201
+
+@app.route('/api/players/template', methods=['GET'])
+def download_template():
+    template_path = os.path.join(os.path.dirname(__file__), 'player_upload_template.xlsx')
+    return send_file(
+        template_path,
+        as_attachment=True,
+        download_name='player_upload_template.xlsx',
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+
+
+@app.route('/api/players/upload', methods=['POST'])
+def upload_players():
+    user = get_current_user()
+    if not user:
+        return jsonify({'error': 'Not logged in'}), 401
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file uploaded'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+    if not file.filename.lower().endswith(('.xlsx', '.xls')):
+        return jsonify({'error': 'File must be .xlsx or .xls'}), 400
+
+    try:
+        df = pd.read_excel(BytesIO(file.read()))
+    except Exception as e:
+        return jsonify({'error': f'Could not read Excel file: {str(e)}'}), 400
+
+    if df.empty:
+        return jsonify({'error': 'Spreadsheet has no data rows'}), 400
+
+    # Normalize column headers so "Win Rate", "win_rate", "WIN RATE %" etc. all match
+    df.columns = [
+        str(c).strip().lower().replace(' ', '_').replace('%', '').replace('/', '_').strip('_')
+        for c in df.columns
+    ]
+
+    column_aliases = {
+        'name':      ['name', 'player', 'player_name'],
+        'agent':     ['agent'],
+        'acs':       ['acs', 'average_combat_score'],
+        'kd':        ['kd', 'k_d', 'kd_ratio'],
+        'kda':       ['kda', 'kda_ratio'],
+        'win_rate':  ['win_rate', 'winrate', 'win'],
+        'headshot':  ['headshot', 'hs', 'headshot_pct', 'headshot_percentage'],
+        'matches':   ['matches', 'match_count'],
+    }
+
+    resolved = {}
+    for field, aliases in column_aliases.items():
+        for alias in aliases:
+            if alias in df.columns:
+                resolved[field] = alias
+                break
+
+    required_fields = ['name', 'acs', 'kd', 'kda', 'win_rate', 'headshot']
+    missing = [f for f in required_fields if f not in resolved]
+    if missing:
+        return jsonify({
+            'error': f'Missing required column(s): {", ".join(missing)}',
+            'found_columns': list(df.columns),
+        }), 400
+
+    existing_count = Player.query.filter_by(user_id=user.id).count()
+    slots_left = MAX_PLAYERS - existing_count
+
+    added = []
+    skipped = []
+
+    for idx, row in df.iterrows():
+        excel_row_num = idx + 2  # +1 for header row, +1 for 0-index
+
+        if len(added) >= slots_left:
+            skipped.append({'row': excel_row_num, 'reason': 'Player limit reached (15 max)'})
+            continue
+
+        try:
+            name = str(row[resolved['name']]).strip()
+            if not name or name.lower() == 'nan':
+                skipped.append({'row': excel_row_num, 'reason': 'Missing name'})
+                continue
+
+            required_cols = [resolved['acs'], resolved['kd'], resolved['kda'],
+                              resolved['win_rate'], resolved['headshot']]
+            if any(pd.isna(row[c]) for c in required_cols):
+                skipped.append({'row': excel_row_num, 'reason': 'Missing required stat value(s)'})
+                continue
+
+            acs = float(row[resolved['acs']])
+            kd = float(row[resolved['kd']])
+            kda = float(row[resolved['kda']])
+            win_rate = float(row[resolved['win_rate']])
+            headshot = float(row[resolved['headshot']])
+
+            agent = 'Unknown'
+            if 'agent' in resolved and pd.notna(row[resolved['agent']]):
+                agent = str(row[resolved['agent']]).strip() or 'Unknown'
+
+            matches = 0
+            if 'matches' in resolved and pd.notna(row[resolved['matches']]):
+                matches = int(row[resolved['matches']])
+
+            player = Player(
+                user_id=user.id, name=name, agent=agent,
+                acs=acs, kd=kd, kda=kda, win_rate=win_rate,
+                headshot=headshot, matches=matches,
+            )
+            db.session.add(player)
+            added.append(name)
+
+        except (ValueError, TypeError):
+            skipped.append({'row': excel_row_num, 'reason': 'Invalid or non-numeric stat value'})
+
+    db.session.commit()
+
+    return jsonify({
+        'message': f'{len(added)} player(s) added successfully',
+        'added': added,
+        'skipped': skipped,
+        'slots_remaining': MAX_PLAYERS - (existing_count + len(added)),
+    }), 201
+
 
 @app.route('/api/players/<int:player_id>', methods=['DELETE'])
 def delete_player(player_id):

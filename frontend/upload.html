@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Upload Players — Valorant Player Ranking System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0b0f;
+    --surface: #12141a;
+    --surface2: #1a1d26;
+    --border: rgba(255,255,255,0.07);
+    --accent: #ff4655;
+    --accent2: #7b61ff;
+    --text: #e8e9f0;
+    --muted: #6b7080;
+    --success: #4caf50;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+
+  header {
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    padding: 0 2rem; display: flex; align-items: center; justify-content: space-between;
+    height: 60px; position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family: 'Rajdhani', sans-serif; font-size: 20px; font-weight: 700; letter-spacing: 2px; color: var(--accent); }
+  .logo span { color: var(--text); }
+  nav a {
+    color: var(--muted); font-size: 13px; text-decoration: none;
+    padding: 6px 14px; border-radius: 6px; transition: all 0.2s;
+    font-weight: 500; letter-spacing: 0.5px;
+  }
+  nav a:hover, nav a.active { color: var(--text); background: var(--surface2); }
+  nav a.active { color: var(--accent); }
+
+  main { padding: 2rem; max-width: 800px; margin: 0 auto; }
+  .page-title { font-family: 'Rajdhani', sans-serif; font-size: 28px; font-weight: 700; margin-bottom: 0.25rem; }
+  .page-sub { font-size: 13px; color: var(--muted); margin-bottom: 1.75rem; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem;
+  }
+  .card h3 { font-family: 'Rajdhani', sans-serif; font-size: 15px; font-weight: 600; letter-spacing: 0.5px; margin-bottom: 0.75rem; text-transform: uppercase; color: var(--muted); }
+
+  .dropzone {
+    border: 2px dashed var(--border); border-radius: 10px;
+    padding: 2.5rem 1.5rem; text-align: center; cursor: pointer;
+    transition: all 0.2s; background: var(--surface2);
+  }
+  .dropzone:hover, .dropzone.dragover { border-color: var(--accent); background: rgba(255,70,85,0.06); }
+  .dropzone .icon { font-size: 30px; margin-bottom: 0.5rem; opacity: 0.6; }
+  .dropzone .main-txt { font-size: 14px; font-weight: 500; margin-bottom: 0.25rem; }
+  .dropzone .sub-txt { font-size: 12px; color: var(--muted); }
+  #file-input { display: none; }
+
+  .file-chip {
+    display: none; align-items: center; gap: 10px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 14px; margin-top: 1rem; font-size: 13px;
+  }
+  .file-chip.show { display: flex; }
+  .file-chip .fname { flex: 1; }
+  .file-chip button { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 15px; }
+
+  .btn {
+    font-family: 'Rajdhani', sans-serif; font-size: 14px; font-weight: 600;
+    letter-spacing: 0.5px; text-transform: uppercase;
+    padding: 10px 22px; border-radius: 8px; border: none; cursor: pointer;
+    transition: all 0.2s; margin-top: 1rem;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #e63e4c; }
+  .btn-primary:disabled { background: var(--surface2); color: var(--muted); cursor: not-allowed; }
+  .btn-ghost { background: none; color: var(--muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+
+  ul.rules { list-style: none; font-size: 12.5px; color: var(--muted); line-height: 1.9; }
+  ul.rules li::before { content: "• "; color: var(--accent); }
+  ul.rules code { background: var(--surface2); padding: 1px 6px; border-radius: 4px; color: var(--text); font-size: 11.5px; }
+
+  .result-box { margin-top: 1rem; }
+  .result-line { font-size: 13px; padding: 8px 0; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; }
+  .result-line:last-child { border-bottom: none; }
+  .tag-added { color: var(--success); font-weight: 600; }
+  .tag-skipped { color: var(--accent); font-weight: 600; }
+
+  .spinner {
+    display: none; width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3);
+    border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite;
+    margin-right: 8px; vertical-align: -3px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .toast {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 12px 18px; font-size: 13px; color: var(--text);
+    opacity: 0; transform: translateY(8px); transition: all 0.3s; pointer-events: none; z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.error { border-color: rgba(255,70,85,0.4); color: var(--accent); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">VAL<span>RANK</span></div>
+  <nav>
+    <a href="/rankings">Rankings</a>
+    <a href="/add">Add Player</a>
+    <a href="/upload" class="active">Upload Spreadsheet</a>
+    <a href="/model">Model Weights</a>
+    <span id="nav-user" style="font-size:13px;color:#6b7080;padding:6px 8px"></span>
+    <a href="#" onclick="logout()" style="color:#ff4655;font-size:13px;padding:6px 10px">Logout</a>
+  </nav>
+</header>
+
+<main>
+  <div class="page-title">Upload Players from Excel</div>
+  <div class="page-sub">Bulk-add players by uploading a spreadsheet instead of entering them one by one.</div>
+
+  <div class="card">
+    <h3>1. Spreadsheet Format</h3>
+    <ul class="rules">
+      <li>Required columns: <code>Name</code>, <code>ACS</code>, <code>KD</code>, <code>KDA</code>, <code>Win_Rate</code>, <code>Headshot</code></li>
+      <li>Optional columns: <code>Agent</code>, <code>Matches</code></li>
+      <li>Column names are not case-sensitive, and spaces/％ signs are fine (e.g. "Win Rate %" also works)</li>
+      <li>Win_Rate and Headshot are plain numbers, e.g. <code>65</code> for 65%</li>
+      <li>Max 15 players per account — extra rows will be skipped, not rejected outright</li>
+    </ul>
+    <button class="btn btn-ghost" onclick="downloadTemplate()">Download Template</button>
+  </div>
+
+  <div class="card">
+    <h3>2. Upload File</h3>
+    <div class="dropzone" id="dropzone" onclick="document.getElementById('file-input').click()">
+      <div class="icon">📊</div>
+      <div class="main-txt">Click to browse, or drag a file here</div>
+      <div class="sub-txt">.xlsx or .xls only</div>
+    </div>
+    <input type="file" id="file-input" accept=".xlsx,.xls">
+    <div class="file-chip" id="file-chip">
+      <span class="fname" id="file-name"></span>
+      <button onclick="clearFile()" title="Remove">✕</button>
+    </div>
+    <button class="btn btn-primary" id="upload-btn" onclick="uploadFile()" disabled>
+      <span class="spinner" id="spinner"></span>Upload &amp; Add Players
+    </button>
+  </div>
+
+  <div class="card" id="result-card" style="display:none;">
+    <h3>3. Result</h3>
+    <div class="result-box" id="result-box"></div>
+  </div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/api';
+let selectedFile = null;
+
+function showToast(msg, isError=false) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => t.className = 'toast', 3200);
+}
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+
+fileInput.addEventListener('change', (e) => {
+  if (e.target.files.length) setFile(e.target.files[0]);
+});
+dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('dragover'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+dropzone.addEventListener('drop', (e) => {
+  e.preventDefault();
+  dropzone.classList.remove('dragover');
+  if (e.dataTransfer.files.length) setFile(e.dataTransfer.files[0]);
+});
+
+function setFile(file) {
+  const okExt = /\.(xlsx|xls)$/i.test(file.name);
+  if (!okExt) { showToast('Please choose a .xlsx or .xls file.', true); return; }
+  selectedFile = file;
+  document.getElementById('file-name').textContent = file.name;
+  document.getElementById('file-chip').classList.add('show');
+  document.getElementById('upload-btn').disabled = false;
+}
+
+function clearFile() {
+  selectedFile = null;
+  fileInput.value = '';
+  document.getElementById('file-chip').classList.remove('show');
+  document.getElementById('upload-btn').disabled = true;
+}
+
+async function uploadFile() {
+  if (!selectedFile) return;
+  const btn = document.getElementById('upload-btn');
+  const spinner = document.getElementById('spinner');
+  btn.disabled = true;
+  spinner.style.display = 'inline-block';
+
+  const formData = new FormData();
+  formData.append('file', selectedFile);
+
+  try {
+    const res = await fetch(`${API}/players/upload`, {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast(data.error || 'Upload failed.', true);
+      if (data.found_columns) {
+        showToast(`Columns found: ${data.found_columns.join(', ')}`, true);
+      }
+      return;
+    }
+
+    renderResult(data);
+    showToast(data.message);
+    clearFile();
+  } catch (e) {
+    showToast('Upload failed. Check your connection.', true);
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+  }
+}
+
+function renderResult(data) {
+  const card = document.getElementById('result-card');
+  const box = document.getElementById('result-box');
+  card.style.display = 'block';
+
+  let html = `<div class="result-line"><span>Added</span><span class="tag-added">${data.added.length} player(s)</span></div>`;
+  data.added.forEach(name => {
+    html += `<div class="result-line"><span>${name}</span><span class="tag-added">✓ added</span></div>`;
+  });
+  if (data.skipped.length) {
+    html += `<div class="result-line"><span>Skipped</span><span class="tag-skipped">${data.skipped.length} row(s)</span></div>`;
+    data.skipped.forEach(s => {
+      html += `<div class="result-line"><span>Row ${s.row}</span><span class="tag-skipped">${s.reason}</span></div>`;
+    });
+  }
+  html += `<div class="result-line"><span>Slots remaining</span><span>${data.slots_remaining} / 15</span></div>`;
+  box.innerHTML = html;
+}
+
+function downloadTemplate() {
+  window.location.href = `${API}/players/template`;
+}
+
+async function checkAuth() {
+  try {
+    const r = await fetch('/api/me', { credentials: 'include' });
+    if (!r.ok) { window.location.href = '/'; return; }
+    const d = await r.json();
+    document.getElementById('nav-user').textContent = d.username;
+  } catch(e) {
+    window.location.href = '/';
+  }
+}
+async function logout() {
+  await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/';
+}
+checkAuth();
+</script>
+</body>
+</html>
